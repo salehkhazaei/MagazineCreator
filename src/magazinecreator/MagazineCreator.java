@@ -81,7 +81,7 @@ public class MagazineCreator {
     }
 
     public static void main(String[] args) {
-        int mode = 1;
+        int mode = 2;
         HashSet<Character> chars = new HashSet<>();
         if (mode == 1) {
             int count = 0;
@@ -106,8 +106,8 @@ public class MagazineCreator {
                             int id = Integer.parseInt(ans);
                             count++;
                             System.out.println("handling request [" + count + "]: " + id);
-                            PageFrame frame = new PageFrame(id, chars, false);
-                            frame = new PageFrame(id, chars, true);
+                            PageFrame frame = new PageFrame(id, chars, false, 0);
+                            frame = new PageFrame(id, chars, true, 0);
                             handleReq(id, key, false, frame.error);
                             handleReq(id, key, true, frame.error);
                         } catch (MalformedURLException ex) {
@@ -155,40 +155,52 @@ public class MagazineCreator {
             }
             PageFrame frame;
             boolean left_page = false;
-            frame = new PageFrame(9113026, chars, left_page);
+            frame = new PageFrame(9113026, chars, left_page, 0);
+            left_page = frame.left_page;
             frame = null;
             for (int i = 9131001; i < 9131090; i++) {
-                if ( i == 9131014 )
+                if (i == 9131014) {
                     continue;
+                }
                 left_page = !left_page;
-                frame = new PageFrame(i, chars, left_page);
-                if ( ! frame.completed )
+                frame = new PageFrame(i, chars, left_page, 0);
+                left_page = frame.left_page;
+                if (!frame.completed) {
                     left_page = !left_page;
+                }
                 frame = null;
             }
             left_page = !left_page;
-            frame = new PageFrame(9131801, chars, left_page);
+            frame = new PageFrame(9131801, chars, left_page, 0);
+            left_page = frame.left_page;
             frame = null;
             for (int i = 9131901; i < 9131911; i++) {
-                if ( i == 9131902 )
+                if (i == 9131902) {
                     continue;
+                }
                 left_page = !left_page;
-                frame = new PageFrame(i, chars, left_page);
-                if ( ! frame.completed )
+                frame = new PageFrame(i, chars, left_page, 0);
+                left_page = frame.left_page;
+                if (!frame.completed) {
                     left_page = !left_page;
+                }
                 frame = null;
             }
             left_page = !left_page;
-            frame = new PageFrame(9133093, chars, left_page);
+            frame = new PageFrame(9133093, chars, left_page, 0);
+            left_page = frame.left_page;
             frame = null;
             left_page = !left_page;
-            frame = new PageFrame(9231513, chars, left_page);
+            frame = new PageFrame(9231513, chars, left_page, 0);
+            left_page = frame.left_page;
             frame = null;
             left_page = !left_page;
-            frame = new PageFrame(9131014, chars, left_page);
+            frame = new PageFrame(9131014, chars, left_page, 0);
+            left_page = frame.left_page;
             frame = null;
             left_page = !left_page;
-            frame = new PageFrame(9131902, chars, left_page);
+            frame = new PageFrame(9131902, chars, left_page, 0);
+            left_page = frame.left_page;
             frame = null;
             FileOutputStream fos;
             try {

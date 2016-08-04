@@ -58,7 +58,7 @@ import org.json.JSONObject;
 public class TheMostCreator {
 
     public static void main(String[] args) {
-        new TarinFrame(false, 0);
+        new TarinFrame(true, 0);
     }
 
     /**
@@ -101,7 +101,7 @@ public class TheMostCreator {
         }
 
         public boolean initJSON() {
-            String updateStr = read("http://mokhi.ir/jashn91/tarinresult_json.php?dontclose");
+            String updateStr = read("http://mokhi.ir/jashn91/tarinresult_json.php?hey=1&dontclose");
             if (updateStr.trim().length() == 0) {
                 return false;
             }
@@ -690,9 +690,20 @@ public class TheMostCreator {
                     g.fillRect(0, 0, 2480, 3508);
 
                     // draw rolls
-                    g.rotate(Math.toRadians(-23.5));
-                    g.translate(-300, 200);
-
+                    System.out.println(left_page);
+                    g.rotate(Math.toRadians((left_page ? -15 : 15)));
+                    try {
+                        BufferedImage bars = ImageIO.read(new File("bars.png"));
+                        g.drawImage(bars, (left_page ? -350 : 200), (left_page ? -160 : -800), null);
+                    } catch (IOException ex) {
+                        Logger.getLogger(PageFrame.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                    /*
+                    if (left_page) {
+                        g.translate(-300, 200);
+                    } else {
+                        g.translate(600, -800);
+                    }
                     g.setPaint(black_up);
                     g.translate(0, 100);
                     drawRay(g);
@@ -708,16 +719,23 @@ public class TheMostCreator {
                     g.setPaint(orange_left);
                     g.translate(0, 100);
                     drawRay(g);
-
-                    g.translate(300, -600);
-                    g.rotate(Math.toRadians(23.5));
+                    if (left_page) {
+                        g.translate(300, -600);
+                    } else {
+                        g.translate(-600, 400);
+                    }
+                     */
+                    g.rotate(Math.toRadians((left_page ? 15 : -15)));
 
                     g.setColor(Color.WHITE);
                     g.setFont(new Font("B Titr", Font.BOLD, 200));
-                    g.drawString("ترین ها", 2300 - g.getFontMetrics().stringWidth("ترین ها"), g.getFontMetrics().getAscent() + 100);
+                    int tarin_place = (left_page ? 2300 - g.getFontMetrics().stringWidth("ترین ها") : 100);
+                    if (offset == 0) {
+                        g.drawString("ترین ها", tarin_place, g.getFontMetrics().getAscent() + 100);
+                    }
 
-                    int y = 500;
-                    int x = 1750;
+                    int y = 300 + (left_page ? 200 : 400);
+                    int x = (left_page ? 1750 + 30 : 1750 - 60);
 
                     int s = -1;
                     int i = 0;
@@ -740,8 +758,8 @@ public class TheMostCreator {
                         int hei = 0;
                         try {
                             BufferedImage logo = ImageIO.read(new File("tarin_pdf/tarin" + best.getInt("emoji_id") + ".png"));
-                            double scale_w = 150.0 / logo.getWidth(null);
-                            double scale_h = 150.0 / logo.getHeight(null);
+                            double scale_w = 180.0 / logo.getWidth(null);
+                            double scale_h = 180.0 / logo.getHeight(null);
                             double scale = Math.max(scale_h, scale_w);
                             hei = (int) (logo.getHeight(null) * scale);
                             g.drawImage(logo, x, y, (int) (logo.getWidth(null) * scale), (int) (logo.getHeight(null) * scale), null);
@@ -786,89 +804,91 @@ public class TheMostCreator {
 
                         try {
                             BufferedImage gold = ImageIO.read(new File("goldLabel.png"));
-                            double scale_w = 200.0 / gold.getWidth(null);
-                            double scale_h = 200.0 / gold.getHeight(null);
+                            double scale_w = 250.0 / gold.getWidth(null);
+                            double scale_h = 250.0 / gold.getHeight(null);
                             double scale = Math.max(scale_h, scale_w);
-                            g.drawImage(gold, (int) (x + 75 + 20 - scale * gold.getWidth(null) / 2 + Math.cos(Math.toRadians(-23)) * 400),
+                            g.drawImage(gold, (int) (x + 120 + 20 - scale * gold.getWidth(null) / 2 + Math.cos(Math.toRadians(-25)) * 400),
                                     (int) (y + 75 + 10 - scale * gold.getHeight(null) / 2 + Math.sin(Math.toRadians(-23)) * 400),
                                     (int) (scale * gold.getWidth(null)),
                                     (int) (scale * gold.getHeight(null)), null);
 
                             BufferedImage silver = ImageIO.read(new File("silverLabel.png"));
-                            g.drawImage(silver, (int) (x + 75 - scale * silver.getWidth(null) / 2 + Math.cos(Math.toRadians(0)) * 400),
+                            g.drawImage(silver, (int) (x + 120 - scale * silver.getWidth(null) / 2 + Math.cos(Math.toRadians(0)) * 400),
                                     (int) (y + 75 - 10 - scale * silver.getHeight(null) / 2 + Math.sin(Math.toRadians(0)) * 400),
                                     (int) (scale * silver.getWidth(null)),
                                     (int) (scale * silver.getHeight(null)), null);
 
                             BufferedImage bronze = ImageIO.read(new File("bronzeLabel.png"));
-                            g.drawImage(bronze, (int) (x + 75 + 15 - scale * bronze.getWidth(null) / 2 + Math.cos(Math.toRadians(23)) * 400),
+                            g.drawImage(bronze, (int) (x + 120 + 15 - scale * bronze.getWidth(null) / 2 + Math.cos(Math.toRadians(25)) * 400),
                                     (int) (y + 75 - 30 - scale * bronze.getHeight(null) / 2 + Math.sin(Math.toRadians(23)) * 400),
                                     (int) (scale * bronze.getWidth(null)),
                                     (int) (scale * bronze.getHeight(null)), null);
 
                             g.setColor(Color.WHITE);
                             g.setStroke(new BasicStroke(1));
-                            g.setFont(new Font("IRANSans", Font.BOLD, 25));
+                            g.setFont(new Font("IRANSans", Font.BOLD, 30));
 
-                            /*
-                            int xx = (int) (x + 75 + 13 + Math.cos(Math.toRadians(-23)) * 300);
-                            int yy = (int) (y + 75 - 35 + Math.sin(Math.toRadians(-23)) * 300);
+                            int xx = (int) (x + 75 + 13 + Math.cos(Math.toRadians(-23)) * 250);
+                            int yy = (int) (y + 75 - 35 + Math.sin(Math.toRadians(-23)) * 250);
                             g.translate(xx, yy);
                             g.rotate(Math.toRadians(-20));
                             if (rank1.getString(0).equals("????")) {
-                                drawString(g, rank1.getString(0).replace('ي', 'ی'), 0, 20, 170, 80, 0, 0, 0, true, false);
+                                drawString(g, rank1.getString(0).replace('ي', 'ی'), 85, 0, 170, 80, 0, 0, 0, true, false);
                             } else {
-                                drawString(g, rank1.getString(0).replace('ي', 'ی'), 0, 0, 170, 80, 0, 0, 0, true, false);
+                                drawString(g, rank1.getString(0).replace('ي', 'ی'), 85, 0, 170, 80, 0, 0, 0, true, false);
                             }
                             g.rotate(Math.toRadians(20));
                             g.translate(-xx, -yy);
 
                             if (rank2.getString(0).equals("????")) {
                                 drawString(g, rank2.getString(0).replace('ي', 'ی'),
-                                        (int) (x + 75 + 30 + Math.cos(Math.toRadians(0)) * 300),
-                                        (int) (y + 75 - 50 + Math.sin(Math.toRadians(0)) * 300) + 20, 165, 80, 0, 0, 0, true, false);
+                                        (int) (x + 115 + 30 + Math.cos(Math.toRadians(0)) * 300),
+                                        (int) (y + 73 - 50 + Math.sin(Math.toRadians(0)) * 300) + 20, 165, 80, 0, 0, 0, true, false);
                             } else {
                                 drawString(g, rank2.getString(0).replace('ي', 'ی'),
-                                        (int) (x + 75 + 30 + Math.cos(Math.toRadians(0)) * 300),
-                                        (int) (y + 75 - 50 + Math.sin(Math.toRadians(0)) * 300), 165, 80, 0, 0, 0, true, false);
+                                        (int) (x + 115 + 30 + Math.cos(Math.toRadians(0)) * 300),
+                                        (int) (y + 73 - 50 + Math.sin(Math.toRadians(0)) * 300), 165, 80, 0, 0, 0, true, false);
                             }
 
                             xx = (int) (x + 75 + 40 + Math.cos(Math.toRadians(23)) * 300);
-                            yy = (int) (y + 75 - 50 + Math.sin(Math.toRadians(23)) * 300);
+                            yy = (int) (y + 73 - 50 + Math.sin(Math.toRadians(23)) * 300);
                             g.translate(xx, yy);
                             g.rotate(Math.toRadians(10));
                             if (rank3.getString(0).equals("????")) {
-                                drawString(g, rank3.getString(0).replace('ي', 'ی'), 0, 20, 170, 80, 0, 0, 0, true, false);
+                                drawString(g, rank3.getString(0).replace('ي', 'ی'), 40, -7, 170, 80, 0, 0, 0, true, false);
                             } else {
-                                drawString(g, rank3.getString(0).replace('ي', 'ی'), 0, 0, 170, 80, 0, 0, 0, true, false);
+                                drawString(g, rank3.getString(0).replace('ي', 'ی'), 40, -7, 170, 80, 0, 0, 0, true, false);
                             }
                             g.rotate(Math.toRadians(-10));
                             g.translate(-xx, -yy);
 
                             g.setColor(Color.WHITE);
-                            g.drawString(rank1.getInt(1) + "", (int) (x + 75 - 25 + Math.cos(Math.toRadians(-23)) * 250),
-                                    (int) (y + 75 - 25 + g.getFontMetrics().getAscent() + Math.sin(Math.toRadians(-23)) * 250));
-                            g.drawString(rank2.getInt(1) + "", (int) (x + 75 - 25 + Math.cos(Math.toRadians(0)) * 250),
-                                    (int) (y + 75 - 25 + g.getFontMetrics().getAscent() + Math.sin(Math.toRadians(0)) * 250));
-                            g.drawString(rank3.getInt(1) + "", (int) (x + 75 - 25 + Math.cos(Math.toRadians(23)) * 250),
-                                    (int) (y + 75 - 25 + g.getFontMetrics().getAscent() + Math.sin(Math.toRadians(23)) * 250));
+                            g.setFont(new Font("IRANSans", Font.BOLD, 20));
+                            g.drawString(toArabicNumber(rank1.getInt(1) + "") + "", (int) (x + 78 - 25 + Math.cos(Math.toRadians(-23)) * 250) + 25 - g.getFontMetrics().stringWidth(toArabicNumber(rank1.getInt(1) + "")) / 2,
+                                    (int) (y + 75 - 25 + g.getFontMetrics().getAscent() + Math.sin(Math.toRadians(-23)) * 250) + 8);
+                            g.drawString(toArabicNumber(rank2.getInt(1) + "") + "", (int) (x + 75 - 25 + Math.cos(Math.toRadians(0)) * 250) + 25 - g.getFontMetrics().stringWidth(toArabicNumber(rank2.getInt(1) + "")) / 2,
+                                    (int) (y + 75 - 25 + g.getFontMetrics().getAscent() + Math.sin(Math.toRadians(0)) * 250) + 8);
+                            g.drawString(toArabicNumber(rank3.getInt(1) + "") + "", (int) (x + 75 - 25 + Math.cos(Math.toRadians(23)) * 250) + 25 - g.getFontMetrics().stringWidth(toArabicNumber(rank3.getInt(1) + "")) / 2,
+                                    (int) (y + 75 - 25 + g.getFontMetrics().getAscent() + Math.sin(Math.toRadians(23)) * 250) + 8);
 
-                            */
                         } catch (IOException ex) {
                             Logger.getLogger(PageFrame.class.getName()).log(Level.SEVERE, null, ex);
                         }
 
-                        x += 826 * s;
-                        y += 100;
+//                        x += 826 * -1;
+                        x += 800 * -1;
+                        y += (100 * (left_page ? 1 : -1));
                         if (x < 0) {
+//                            s = 1;
+//                            x = 98;
                             s = 1;
-                            x = 98;
-                            y += 300;
+                            x = (left_page ? 1750 + 30 : 1750 - 60);
+                            y += 300 + (left_page ? 0 : 600);
                         }
                         if (x > 2500) {
-                            s = -1;
-                            x = 1750;
-                            y += 300;
+                            s = 1;
+                            x = (left_page ? 1750 + 30 : 1750 - 60);
+                            y += 300 + (left_page ? 0 : 300);
                         }
                         if (y > 3200) {
                             new TarinFrame(!left_page, i + 1);

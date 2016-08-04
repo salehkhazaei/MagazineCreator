@@ -58,7 +58,7 @@ public class ProfilePageCreator {
         int temp = 0;
         System.out.println("start");
         for (Integer id : ids) {
-            String updateStr = read("http://mokhi.ir/jashn91/majale_json.php?dontclose=0&user=" + id);
+            String updateStr = read("http://mokhi.ir/jashn91/majale_json.php?hey=1&dontclose=0&user=" + id);
             if (updateStr.trim().length() == 0) {
                 continue;
             }

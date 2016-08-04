@@ -41,6 +41,7 @@ public class PageFrame extends JFrame {
     HashSet<Character> chars;
     String error = "";
     boolean completed = false;
+    boolean left_page;
 
     public static String read(String url) {
         for (int i = 0; i < 10; i++) {
@@ -71,7 +72,7 @@ public class PageFrame extends JFrame {
     }
 
     public boolean initJSON(int id) {
-        String updateStr = read("http://mokhi.ir/jashn91/majale_json.php?dontclose=0&user=" + id);
+        String updateStr = read("http://mokhi.ir/jashn91/majale_json.php?hey=1&dontclose=0&pdf&user=" + id);
         if (updateStr.trim().length() == 0) {
             return false;
         }
@@ -79,7 +80,8 @@ public class PageFrame extends JFrame {
         return true;
     }
 
-    public PageFrame(int id, HashSet<Character> chars, boolean left_page) {
+    public PageFrame(int id, HashSet<Character> chars, boolean left_page, int offset) {
+        this.left_page = left_page;
         this.chars = chars;
         this.user_id = id;
         if (!initJSON(id)) {
@@ -391,6 +393,248 @@ public class PageFrame extends JFrame {
                 return size;
             }
 
+            public int stringHeight(Graphics g, String str, int x, int y, int w, int h, int start_y, int first_shift, int second_shift, boolean indent_from_right) {
+                return stringHeight(g, str, x, y, w, h, start_y, first_shift, second_shift, false, indent_from_right);
+            }
+
+            public int stringHeight(Graphics g, String str, int x, int y, int w, int h, int start_y, int first_shift, int second_shift, boolean center, boolean indent_from_right) {
+                Font f = g.getFont();
+                Font e = new Font("Arial", f.getStyle(), f.getSize() - 8);
+                return stringHeight(g, e, str, x, y, w, h, start_y, first_shift, second_shift, center, indent_from_right);
+            }
+
+            public int stringHeight(Graphics g, Font e, String str, int x, int y, int w, int h, int start_y, int first_shift, int second_shift, boolean center, boolean indent_from_right) {
+                int hh = 0;
+                str = toArabicNumber(str);
+                // fonts 
+                Font f = g.getFont();
+
+                ArrayList<ArrayList<String>> lines = new ArrayList<>();
+                int line_number = 0;
+                {
+                    String[] arr = splitStringByMode(str);
+                    ArrayList<String> line = new ArrayList<>();
+                    for (String word : arr) {
+                        if (word.equals("\n")) {
+                            lines.add(line);
+                            line = new ArrayList<>();
+                            line_number++;
+                            continue;
+                        }
+                        ArrayList<String> bagWord = new ArrayList<>();
+                        bagWord.add(word);
+                        int wi2 = stringNoSpaceWidth(g, line, MIN_SPACE) + stringNoSpaceWidth(g, bagWord, MIN_SPACE);
+                        if (line_number == 0) {
+                            wi2 += first_shift;
+                        }
+                        if (line_number == 1) {
+                            wi2 += second_shift;
+                        }
+                        if (wi2 > w) {
+                            lines.add(line);
+                            line = new ArrayList<>();
+                            line_number++;
+                        }
+                        line.add(word);
+                    }
+                    if (line.size() > 0) {
+                        lines.add(line);
+                    }
+                }
+
+                int yy = y;
+                line_number = 0;
+                for (int z = 0; z < lines.size(); z++) {
+                    ArrayList<String> lin = lines.get(z);
+                    lin = handleEng(lin);
+                    trim(lin);
+                    if (lin.isEmpty()) {
+                        continue;
+                    }
+                    // draw line by line
+                    int wi = stringNoSpaceWidth(g, lin, g.getFontMetrics().stringWidth(" ")) + (line_number == 0 ? first_shift : 0) + (line_number == 1 ? second_shift : 0);
+                    if (wi < 0.8 * w) {
+                        int xx = x + (center ? w / 2 + wi / 2 : w) - (indent_from_right ? ((line_number == 0 ? first_shift : 0) + (line_number == 1 ? second_shift : 0)) : 0);
+                        line_number++;
+
+                        int line_h = 0;
+                        for (int i = 0; i < lin.size(); i++) {
+                            String word = lin.get(i);
+                            int mode = getCharacterMode(word.charAt(0));
+                            switch (mode) // 0-eng, 1-per, 2-sym, 3-space, 4-new line
+                            {
+                                case 0:
+                                    g.setFont(e);
+                                    if (word.charAt(0) >= 1776 && word.charAt(0) <= 1785) {
+                                        g.setFont(f);
+                                    }
+                                    break;
+                                case 1:
+                                    g.setFont(f);
+                                    break;
+                                case 2:
+                                    boolean per = true;
+                                    if (i < lin.size() - 1) {
+                                        char c = lin.get(i + 1).charAt(0);
+                                        per = (getCharacterMode(c) != 0 || (c >= 1776 && c <= 1785));
+                                    }
+                                    if (i > 0) {
+                                        char c = lin.get(i - 1).charAt(0);
+                                        per = (getCharacterMode(c) != 0 || (c >= 1776 && c <= 1785));
+                                    }
+                                    if (word.contains("*")) {
+                                        per = false;
+                                    }
+                                    String temp = "";
+                                    for (int j = 0; j < word.length(); j++) {
+                                        char c = word.charAt(j);
+                                        if (c == '(') {
+                                            c = ')';
+                                        } else if (c == ')') {
+                                            c = '(';
+                                        } else if (c == '[') {
+                                            c = ']';
+                                        } else if (c == ']') {
+                                            c = '[';
+                                        } else if (c == '<') {
+                                            c = '>';
+                                        } else if (c == '>') {
+                                            c = '<';
+                                        } else if (c == '\\') {
+                                            c = '/';
+                                        } else if (c == '/') {
+                                            c = '\\';
+                                        } else if (c == '{') {
+                                            c = '}';
+                                        } else if (c == '}') {
+                                            c = '{';
+                                        }
+                                        temp += c;
+                                    }
+                                    word = temp;
+                                    word = new StringBuilder(word).reverse().toString();
+                                    if (f.canDisplayUpTo(word) == -1 && per) {
+                                        g.setFont(f);
+                                    } else {
+                                        g.setFont(e);
+                                    }
+                                    break;
+                                case 3:
+                                    xx -= MIN_SPACE;
+                                    continue;
+                            }
+                            xx -= g.getFontMetrics().stringWidth(word);
+                            line_h = Math.max(line_h, g.getFontMetrics().getHeight() + 10);
+                            g.setFont(f);
+                        }
+                        yy += line_h;
+                        hh += line_h;
+                        if (yy > y + h && z + 1 < lines.size()) {
+                            yy = start_y;
+                            x -= w + 70;
+                        }
+                        continue;
+                    }
+
+                    wi = stringNoSpaceWidth(g, (lin), 0) + (line_number == 0 ? first_shift : 0) + (line_number == 1 ? second_shift : 0);
+                    int words = 0;
+                    for (String l : lin) {
+                        if (getCharacterMode(l.charAt(0)) == 3) {
+                            words++;
+                        }
+                    }
+                    int s = w - wi;
+                    double d;
+                    if (words < 1) {
+                        d = 0;
+                    } else {
+                        d = (double) s / (double) (words);
+                    }
+                    int xx = x + w - (indent_from_right ? ((line_number == 0 ? first_shift : 0) + (line_number == 1 ? second_shift : 0)) : 0);
+                    line_number++;
+
+                    int line_h = 0;
+                    for (int i = 0; i < lin.size(); i++) {
+                        String word = lin.get(i);
+                        int mode = getCharacterMode(word.charAt(0));
+                        switch (mode) // 0-eng, 1-per, 2-sym, 3-space, 4-new line
+                        {
+                            case 0:
+                                g.setFont(e);
+                                if (word.charAt(0) >= 1776 && word.charAt(0) <= 1785) {
+                                    g.setFont(f);
+                                }
+                                break;
+                            case 1:
+                                g.setFont(f);
+                                break;
+                            case 2:
+                                boolean per = true;
+                                if (i < lin.size() - 1) {
+                                    char c = lin.get(i + 1).charAt(0);
+                                    per = (getCharacterMode(c) != 0 || (c >= 1776 && c <= 1785));
+                                }
+                                if (i > 0) {
+                                    char c = lin.get(i - 1).charAt(0);
+                                    per = (getCharacterMode(c) != 0 || (c >= 1776 && c <= 1785));
+                                }
+                                if (word.contains("*")) {
+                                    per = false;
+                                }
+                                String temp = "";
+                                for (int j = 0; j < word.length(); j++) {
+                                    char c = word.charAt(j);
+                                    if (c == '(') {
+                                        c = ')';
+                                    } else if (c == ')') {
+                                        c = '(';
+                                    } else if (c == '[') {
+                                        c = ']';
+                                    } else if (c == ']') {
+                                        c = '[';
+                                    } else if (c == '<') {
+                                        c = '>';
+                                    } else if (c == '>') {
+                                        c = '<';
+                                    } else if (c == '\\') {
+                                        c = '/';
+                                    } else if (c == '/') {
+                                        c = '\\';
+                                    } else if (c == '{') {
+                                        c = '}';
+                                    } else if (c == '}') {
+                                        c = '{';
+                                    }
+                                    temp += c;
+                                }
+                                word = temp;
+                                word = new StringBuilder(word).reverse().toString();
+                                if (f.canDisplayUpTo(word) == -1 && per) {
+                                    g.setFont(f);
+                                } else {
+                                    g.setFont(e);
+                                }
+                                break;
+                            case 3:
+                                xx -= d;
+                                continue;
+                        }
+                        xx -= g.getFontMetrics().stringWidth(word);
+                        line_h = Math.max(line_h, g.getFontMetrics().getHeight() + 10);
+                        g.setFont(f);
+                    }
+
+                    yy += line_h;
+                    hh += line_h;
+                    if (yy > y + h && z + 1 < lines.size()) {
+                        yy = start_y;
+                        x -= w + 70;
+                    }
+                }
+                g.setFont(f);
+                return hh;
+            }
+
             public void addChars(String str) {
                 for (int i = 0; i < str.length(); i++) {
                     chars.add(str.charAt(i));
@@ -412,10 +656,6 @@ public class PageFrame extends JFrame {
                 }
             }
 
-            public int drawString(Graphics g, String str, int x, int y, int w, int h, int start_y, int first_shift, int second_shift, boolean indent_from_right) {
-                return drawString(g, str, x, y, w, h, start_y, first_shift, second_shift, false, indent_from_right);
-            }
-
             public String toArabicNumber(String str) {
                 String str2 = "";
                 for (int i = 0; i < str.length(); i++) {
@@ -426,6 +666,10 @@ public class PageFrame extends JFrame {
                     str2 += c;
                 }
                 return str2;
+            }
+
+            public int drawString(Graphics g, String str, int x, int y, int w, int h, int start_y, int first_shift, int second_shift, boolean indent_from_right) {
+                return drawString(g, str, x, y, w, h, start_y, first_shift, second_shift, false, indent_from_right);
             }
 
             public int drawString(Graphics g, String str, int x, int y, int w, int h, int start_y, int first_shift, int second_shift, boolean center, boolean indent_from_right) {
@@ -927,46 +1171,47 @@ public class PageFrame extends JFrame {
                 int height_pic = 0;
                 boolean havePic = false;
                 int picOpt = 0;
-                System.out.print("phase 3...");
-                try {
-                    String picUrl = obj.getString("pagePic");
-                    picOpt = obj.getInt("picopt");
-                    if (picUrl.trim().length() > 0) {
-                        havePic = true;
-                        Image image = FileFetch.fetchImage(picUrl);
+                if (offset == 0) {
+                    System.out.print("phase 3...");
+                    try {
+                        String picUrl = obj.getString("pagePic");
+                        picOpt = obj.getInt("picopt");
+                        if (picUrl.trim().length() > 0) {
+                            havePic = true;
+                            Image image = FileFetch.fetchImage(picUrl);
 
-                        BufferedImage img_buf;
-                        int mid;
-                        switch (picOpt) {
-                            case 1:
-                                height_pic = (int) (750 * ((double) image.getHeight(null) / (double) image.getWidth(null)));
-                                mid = (left_page ? 780 + 375 : 50 + 1295);
-                                img_buf = new BufferedImage(750, height_pic, BufferedImage.TYPE_INT_ARGB);
-                                break;
-                            case 2:
-                                height_pic = (int) (1570 * ((double) image.getHeight(null) / (double) image.getWidth(null)));
-                                mid = (left_page ? 780 + 785 : 50 + 885);
-                                img_buf = new BufferedImage(1570, height_pic, BufferedImage.TYPE_INT_ARGB);
-                                break;
-                            default:
-                                height_pic = 700;
-                                mid = (left_page ? 780 + 785 : 50 + 885);
-                                img_buf = new BufferedImage(1570, 700, BufferedImage.TYPE_INT_ARGB);
-                                break;
+                            BufferedImage img_buf;
+                            int mid;
+                            switch (picOpt) {
+                                case 1:
+                                    height_pic = (int) (750 * ((double) image.getHeight(null) / (double) image.getWidth(null)));
+                                    mid = (left_page ? 780 + 375 : 50 + 1295);
+                                    img_buf = new BufferedImage(750, height_pic, BufferedImage.TYPE_INT_ARGB);
+                                    break;
+                                case 2:
+                                    height_pic = (int) (1570 * ((double) image.getHeight(null) / (double) image.getWidth(null)));
+                                    mid = (left_page ? 780 + 785 : 50 + 885);
+                                    img_buf = new BufferedImage(1570, height_pic, BufferedImage.TYPE_INT_ARGB);
+                                    break;
+                                default:
+                                    height_pic = 700;
+                                    mid = (left_page ? 780 + 785 : 50 + 885);
+                                    img_buf = new BufferedImage(1570, 700, BufferedImage.TYPE_INT_ARGB);
+                                    break;
+                            }
+
+                            Graphics2D gg = img_buf.createGraphics();
+
+                            double scale_w = (float) img_buf.getWidth() / image.getWidth(null);
+                            double scale_h = (float) img_buf.getHeight() / image.getHeight(null);
+                            double scale = Math.min(scale_h, scale_w);
+                            gg.drawImage(image, -((int) (image.getWidth(null) * scale) - img_buf.getWidth()) / 2, -((int) (image.getHeight(null) * scale) - img_buf.getHeight()) / 2, (int) (image.getWidth(null) * scale), (int) (image.getHeight(null) * scale), null);
+
+                            g.drawImage(img_buf, mid - img_buf.getWidth() / 2, 3450 - height_pic, null);
                         }
-
-                        Graphics2D gg = img_buf.createGraphics();
-
-                        double scale_w = (float) img_buf.getWidth() / image.getWidth(null);
-                        double scale_h = (float) img_buf.getHeight() / image.getHeight(null);
-                        double scale = Math.min(scale_h, scale_w);
-                        gg.drawImage(image, -((int) (image.getWidth(null) * scale) - img_buf.getWidth()) / 2, -((int) (image.getHeight(null) * scale) - img_buf.getHeight()) / 2, (int) (image.getWidth(null) * scale), (int) (image.getHeight(null) * scale), null);
-
-                        g.drawImage(img_buf, mid - img_buf.getWidth() / 2, 3450 - height_pic, null);
+                    } catch (Exception e) {
                     }
-                } catch (Exception e) {
                 }
-
                 // draw short answers 
                 g.setFont(new Font("B Titr", Font.BOLD, 50));
                 g.setColor(Color.BLACK);
@@ -1003,6 +1248,7 @@ public class PageFrame extends JFrame {
                     int yu = drawString(g, strShortA, (left_page ? 50 : 1780), 1020, 650, 2400, 4000, 0, 0, true);
                     if (yu > 4000) {
                         short_ans_rem += "{Error: " + (yu - 4000) + "pixels are out of page! (about " + ((yu - 4000) / g.getFontMetrics().getHeight()) + " line(s))";
+
                     }
                 }
 
@@ -1066,17 +1312,19 @@ public class PageFrame extends JFrame {
                             yi += 105;
                         }
                         g.fillRoundRect(xi, yi, g.getFontMetrics().stringWidth(best) + 45, g.getFontMetrics().getHeight(), 30, 30);
+
                         if (SHOW_GRAPHICS) {
                             try {
                                 BufferedImage logo = ImageIO.read(new File((place == 1 ? "gold.png" : (place == 2 ? "silver.png" : (place == 3 ? "bronze.png" : "forth.png")))));
                                 g.drawImage(logo, xi - 35, yi - 10, 70, 110, null);
                                 g.setColor(Color.WHITE);
-                                //g.drawString(toArabicNumber(place + ""), (int) (xi - (g.getFontMetrics().stringWidth(toArabicNumber(place + "")) / 2.0)), yi + 32);
-                                //g.drawString(best, xi + 40, yi + 35);
+                                g.drawString(toArabicNumber(place + ""), (int) (xi - (g.getFontMetrics().stringWidth(toArabicNumber(place + "")) / 2.0)), yi + 32);
+                                g.drawString(best, xi + 40, yi + 35);
                             } catch (IOException ex) {
                                 Logger.getLogger(PageFrame.class.getName()).log(Level.SEVERE, null, ex);
                             }
                         }
+
                         xi += g.getFontMetrics().stringWidth(best) + 85;
                     }
                     if (xi > (left_page ? 2030 : 1610)) {
@@ -1084,7 +1332,7 @@ public class PageFrame extends JFrame {
                     } else {
                         yi += 50;
                     }
-                    
+
                     if (yi > y_main) {
                         shift_x += yi - y_main;
                         y_main = yi;
@@ -1118,6 +1366,7 @@ public class PageFrame extends JFrame {
                 boolean draw_qoute = false;
                 g.setColor(Color.BLACK);
                 int yy = y_main;
+                int remaining_offset = -1;
                 if (obj.has("khatere")) {
                     JSONObject array = obj.getJSONObject("khatere");
                     xxx = (left_page ? 1600 : 1000);
@@ -1137,7 +1386,12 @@ public class PageFrame extends JFrame {
                         }
                     });
 
-                    for (int i = 0; i < khaterat.size(); i++) {
+                    int i = 0;
+                    khatereloop:
+                    for (; i < khaterat.size(); i++) {
+                        if (i < offset) {
+                            continue;
+                        }
                         String key = khaterat.get(i).key;
                         String ans = khaterat.get(i).str;
 
@@ -1164,7 +1418,7 @@ public class PageFrame extends JFrame {
                         if (xxx < (left_page ? 620 : 0)) {
                             break;
                         }
-                        if ((((left_page ? xxx < 800 : xxx > 800) && yy > 1400)) && !draw_qoute) {
+                        if ((((left_page ? xxx < 800 : xxx > 800) && yy > 1400)) && !draw_qoute && offset == 0) {
                             draw_qoute = true;
                             // draw qoute
                             String qoute = obj.getString("qoute");
@@ -1203,8 +1457,9 @@ public class PageFrame extends JFrame {
                             break;
                         }
 
-                        g.setFont(new Font("B Lotus", Font.BOLD, 40));
-                        g.drawString(key + ":", xxx + 750 - g.getFontMetrics().stringWidth(key + ":"), yy + g.getFontMetrics().getAscent());
+                        int name_x = xxx + 750 - g.getFontMetrics().stringWidth(key + ":");
+                        int name_y = yy + g.getFontMetrics().getAscent();
+
                         yy += g.getFontMetrics().getHeight();
 
                         g.setFont(new Font("B Lotus", 0, 40));
@@ -1212,21 +1467,39 @@ public class PageFrame extends JFrame {
                             switch (picOpt) {
                                 case 1:
                                     if ((left_page ? xxx < 800 : xxx > 800)) {
+                                        if (xxx < 800 && yy + stringHeight(g, ans, xxx, yy, 750, 3450 - height_pic - 100 - yy, y_main, 20, 0, true) > 3450 - height_pic - 100) {
+                                            break khatereloop;
+                                        }
                                         yy = drawString(g, ans, xxx, yy, 750, 3450 - height_pic - 100 - yy, y_main, 20, 0, true) + g.getFontMetrics().getHeight() / 2;
                                     } else {
+                                        if (xxx < 800 && yy + stringHeight(g, ans, xxx, yy, 750, 3400 - yy, y_main, 20, 0, true) > 3400) {
+                                            break khatereloop;
+                                        }
                                         yy = drawString(g, ans, xxx, yy, 750, 3400 - yy, y_main, 20, 0, true) + g.getFontMetrics().getHeight() / 2;
                                     }
                                     break;
                                 default:
+                                    if (xxx < 800 && yy + stringHeight(g, ans, xxx, yy, 750, 3450 - height_pic - 100 - yy, y_main, 20, 0, true) > 3450 - height_pic - 100) {
+                                        break khatereloop;
+                                    }
                                     yy = drawString(g, ans, xxx, yy, 750, 3450 - height_pic - 100 - yy, y_main, 20, 0, true) + g.getFontMetrics().getHeight() / 2;
                                     break;
                             }
                         } else {
+                            if (xxx < 800 && yy + stringHeight(g, ans, xxx, yy, 750, 3400 - yy, y_main, 20, 0, true) > 3400) {
+                                break;
+                            }
                             yy = drawString(g, ans, xxx, yy, 750, 3400 - yy, y_main, 20, 0, true) + g.getFontMetrics().getHeight() / 2;
                         }
+                        g.setFont(new Font("B Lotus", Font.BOLD, 40));
+                        g.drawString(key + ":", name_x, name_y);
+                    }
+                    System.out.println(i + " " + khaterat.size());
+                    if (i < khaterat.size()) {
+                        remaining_offset = i;
                     }
                 }
-                if (!draw_qoute) {
+                if (!draw_qoute && offset == 0) {
                     yy = Math.max(yy, 1500);
                     if (xxx > 800) {
                         xxx -= 820;
@@ -1266,12 +1539,17 @@ public class PageFrame extends JFrame {
                 }
                 System.out.print("phase 4...");
                 try {
-                    ImageIO.write(buf, "jpg", new File("pages/" + user_id + "_" + Math.abs((user_id * 11) % 9999) + (left_page ? "-left" : "-right") + ".jpg"));
+                    ImageIO.write(buf, "jpg", new File("pages/" + user_id + "_" + Math.abs((user_id * 11) % 9999) + "_" + offset + (left_page ? "-left" : "-right") + ".jpg"));
                 } catch (IOException ex) {
                     Logger.getLogger(PageFrame.class.getName()).log(Level.SEVERE, null, ex);
                 }
                 System.out.println("done " + user_id);
                 completed = true;
+                System.out.println("offset:" + remaining_offset);
+                if (remaining_offset >= 0) {
+                    PageFrame f = new PageFrame(id, chars, !left_page, remaining_offset);
+                    PageFrame.this.left_page = f.left_page;
+                }
                 //g2d.drawImage(buf, 0, 0, getWidth(), getHeight(), null);
                 //PageFrame.this.setVisible(false);
                 //PageFrame.this.dispose();
